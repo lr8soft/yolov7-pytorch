@@ -72,7 +72,7 @@ if __name__ == "__main__":
     onnx_save_path  = "model_data/models.onnx"
 
     if mode != "predict_onnx":
-        yolo = YOLO()
+        yolo = YOLO(model_path="logs/ep050-loss0.057-val_loss0.045.pth", classes_path="model_data/cls_classes.txt")
     else:
         yolo = YOLO_ONNX()
 
@@ -93,7 +93,8 @@ if __name__ == "__main__":
                 print('Open Error! Try again!')
                 continue
             else:
-                r_image = yolo.detect_image(image, crop = crop, count=count)
+                r_image, detections = yolo.detect_image(image, crop = crop, count=count)
+                print(detections)
                 r_image.show()
 
     elif mode == "video":

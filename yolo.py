@@ -117,7 +117,7 @@ class YOLO(object):
     #---------------------------------------------------#
     #   检测图片
     #---------------------------------------------------#
-    def detect_image(self, image, crop = False, count = False):
+    def detect_image(self, image, crop = False, count = False, draw_bbox = True):
         #---------------------------------------------------#
         #   计算输入图片的高和宽
         #---------------------------------------------------#
@@ -154,7 +154,7 @@ class YOLO(object):
                         image_shape, self.letterbox_image, conf_thres = self.confidence, nms_thres = self.nms_iou)
                                                     
             if results[0] is None: 
-                return image
+                return image, None
 
             top_label   = np.array(results[0][:, 6], dtype = 'int32')
             top_conf    = results[0][:, 4] * results[0][:, 5]
@@ -162,7 +162,8 @@ class YOLO(object):
         #---------------------------------------------------------#
         #   设置字体与边框厚度
         #---------------------------------------------------------#
-        font        = ImageFont.truetype(font='model_data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
+        if draw_bbox:
+            font        = ImageFont.truetype(font='model_data/simhei.ttf', size=np.floor(3e-2 * image.size[1] + 0.5).astype('int32'))
         thickness   = int(max((image.size[0] + image.size[1]) // np.mean(self.input_shape), 1))
         #---------------------------------------------------------#
         #   计数
@@ -196,36 +197,42 @@ class YOLO(object):
         #---------------------------------------------------------#
         #   图像绘制
         #---------------------------------------------------------#
+
+        detection_data = []
+
         for i, c in list(enumerate(top_label)):
-            predicted_class = self.class_names[int(c)]
-            box             = top_boxes[i]
-            score           = top_conf[i]
+            detection_data.append([self.class_names[int(c)], top_conf[i].item(), top_boxes[i].tolist()])
 
-            top, left, bottom, right = box
+            if draw_bbox:
+                predicted_class = self.class_names[int(c)]
+                box = top_boxes[i]
+                score = top_conf[i]
 
-            top     = max(0, np.floor(top).astype('int32'))
-            left    = max(0, np.floor(left).astype('int32'))
-            bottom  = min(image.size[1], np.floor(bottom).astype('int32'))
-            right   = min(image.size[0], np.floor(right).astype('int32'))
+                top, left, bottom, right = box
 
-            label = '{} {:.2f}'.format(predicted_class, score)
-            draw = ImageDraw.Draw(image)
-            label_size = draw.textsize(label, font)
-            label = label.encode('utf-8')
-            print(label, top, left, bottom, right)
-            
-            if top - label_size[1] >= 0:
-                text_origin = np.array([left, top - label_size[1]])
-            else:
-                text_origin = np.array([left, top + 1])
+                top = max(0, np.floor(top).astype('int32'))
+                left = max(0, np.floor(left).astype('int32'))
+                bottom = min(image.size[1], np.floor(bottom).astype('int32'))
+                right = min(image.size[0], np.floor(right).astype('int32'))
 
-            for i in range(thickness):
-                draw.rectangle([left + i, top + i, right - i, bottom - i], outline=self.colors[c])
-            draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=self.colors[c])
-            draw.text(text_origin, str(label,'UTF-8'), fill=(0, 0, 0), font=font)
-            del draw
+                label = '{} {:.2f}'.format(predicted_class, score)
+                draw = ImageDraw.Draw(image)
+                label_size = draw.textsize(label, font)
+                label = label.encode('utf-8')
+                # print(label, top, left, bottom, right)
 
-        return image
+                if top - label_size[1] >= 0:
+                    text_origin = np.array([left, top - label_size[1]])
+                else:
+                    text_origin = np.array([left, top + 1])
+
+                for i in range(thickness):
+                    draw.rectangle([left + i, top + i, right - i, bottom - i], outline=self.colors[c])
+                draw.rectangle([tuple(text_origin), tuple(text_origin + label_size)], fill=self.colors[c])
+                draw.text(text_origin, str(label, 'UTF-8'), fill=(0, 0, 0), font=font)
+                del draw
+
+        return image, detection_data
 
     def get_FPS(self, image, test_interval):
         image_shape = np.array(np.shape(image)[0:2])
