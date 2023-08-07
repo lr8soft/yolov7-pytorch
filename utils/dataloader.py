@@ -89,11 +89,15 @@ class YoloDataset(Dataset):
         return np.random.rand()*(b-a) + a
 
     def get_random_data(self, annotation_line, input_shape, jitter=.3, hue=.1, sat=0.7, val=0.4, random=True):
-        line    = annotation_line.split()
+        line    = annotation_line.split(';')
         #------------------------------#
         #   读取图像并转换成RGB图像
         #------------------------------#
-        image   = Image.open(line[0])
+        try:
+            image   = Image.open(line[0])
+        except:
+            print(line)
+            raise Exception("Open Error! Load Image Failed!")
         image   = cvtColor(image)
         #------------------------------#
         #   获得图像的高宽与目标高宽
@@ -261,7 +265,7 @@ class YoloDataset(Dataset):
             #---------------------------------#
             #   每一行进行分割
             #---------------------------------#
-            line_content = line.split()
+            line_content = line.split(';')
             #---------------------------------#
             #   打开图片
             #---------------------------------#
@@ -288,7 +292,7 @@ class YoloDataset(Dataset):
             #------------------------------------------#
             #   对图像进行缩放并且进行长和宽的扭曲
             #------------------------------------------#
-            new_ar = iw/ih * self.rand(1-jitter,1+jitter) / self.rand(1-jitter,1+jitter)
+            new_ar = iw / ih * self.rand(1 - jitter, 1 + jitter) / self.rand(1 - jitter, 1 + jitter)
             scale = self.rand(.4, 1)
             if new_ar < 1:
                 nh = int(scale*h)

@@ -20,7 +20,7 @@ annotation_mode     = 0
 #   那么就是因为classes没有设定正确
 #   仅在annotation_mode为0和2的时候有效
 #-------------------------------------------------------------------#
-classes_path        = 'model_data/voc_classes.txt'
+classes_path        = 'model_data/cls_classes.txt'
 #--------------------------------------------------------------------------------------------------------------------------------#
 #   trainval_percent用于指定(训练集+验证集)与测试集的比例，默认情况下 (训练集+验证集):测试集 = 9:1
 #   train_percent用于指定(训练集+验证集)中训练集与验证集的比例，默认情况下 训练集:验证集 = 9:1
@@ -57,7 +57,7 @@ def convert_annotation(year, image_id, list_file):
         cls_id = classes.index(cls)
         xmlbox = obj.find('bndbox')
         b = (int(float(xmlbox.find('xmin').text)), int(float(xmlbox.find('ymin').text)), int(float(xmlbox.find('xmax').text)), int(float(xmlbox.find('ymax').text)))
-        list_file.write(" " + ",".join([str(a) for a in b]) + ',' + str(cls_id))
+        list_file.write(";" + ",".join([str(a) for a in b]) + ',' + str(cls_id))
         
         nums[classes.index(cls)] = nums[classes.index(cls)] + 1
         
@@ -111,10 +111,13 @@ if __name__ == "__main__":
         print("Generate 2007_train.txt and 2007_val.txt for train.")
         type_index = 0
         for year, image_set in VOCdevkit_sets:
-            image_ids = open(os.path.join(VOCdevkit_path, 'VOC%s/ImageSets/Main/%s.txt'%(year, image_set)), encoding='utf-8').read().strip().split()
-            list_file = open('%s_%s.txt'%(year, image_set), 'w', encoding='utf-8')
+            #     image_ids = open('ImageSets/Main/%s.txt' % image_set, encoding='gbk').read().strip().split('\n')
+            image_ids = open(os.path.join(VOCdevkit_path, 'VOC%s/ImageSets/Main/%s.txt'%(year, image_set)), encoding='gbk').read().strip().split('\n')
+            list_file = open('%s_%s.txt'%(year, image_set), 'w', encoding='gbk')
             for image_id in image_ids:
-                list_file.write('%s/VOC%s/JPEGImages/%s.jpg'%(os.path.abspath(VOCdevkit_path), year, image_id))
+                image_name = '%s/VOC%s/JPEGImages/%s.jpg' % (os.path.abspath(VOCdevkit_path), year, image_id)
+                list_file.write(image_name)
+                print(image_name)
 
                 convert_annotation(year, image_id, list_file)
                 list_file.write('\n')
